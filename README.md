@@ -36,6 +36,10 @@ To publish content changes automatically: Vercel → Settings → Git → Deploy
 sanity.io/manage → API → Webhooks → add the hook URL (trigger on create, update, delete).
 Add the production URL to Sanity CORS origins so `/admin` works on the live site.
 
+## Automatic Norwegian
+
+Publishing in the Studio triggers `/api/translate`, which fills empty Norwegian fields with Claude and saves them back. Vercel needs `ANTHROPIC_API_KEY` and `SANITY_API_WRITE_TOKEN`; Sanity needs a webhook pointing at `https://<your-site>/api/translate` with the filter `_type in ["project", "siteSettings"] && !(_id in path("drafts.**"))`, triggered on create and update.
+
 ## Where things live
 
 | What | Where |

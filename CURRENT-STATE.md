@@ -1,6 +1,6 @@
 # Current State
 
-Updated 2026-10-13 (v2.4). Made by Electric Mustard.
+Updated 2026-10-13 (v2.5). Made by Electric Mustard.
 
 ## Stack
 
@@ -10,13 +10,17 @@ Updated 2026-10-13 (v2.4). Made by Electric Mustard.
 | Sanity Studio | 6.18, embedded at `/admin` via `@sanity/astro` 3.5 (hash routing because output is static) |
 | GSAP | 3.15 (Observer, CustomEase, ScrollTrigger — all free) |
 | Node | 22.12 or newer |
-| Hosting | Vercel (static). Not yet connected. |
-| Code | Not yet on GitHub. Use Stacki → branch chip → Publish to GitHub. |
-| Sanity project | Created 2026-10-13: project `z3603j0f`, dataset `production`, seeded with the five sample projects. Studio at `/admin`; CORS allows `http://localhost:4321`. Todd's `.env` holds the Project ID and a seed token (never committed). |
+| Hosting | Vercel, project `mustard-site` (team electric-mustard), live at https://mustard-site-sigma.vercel.app. Static pages via `@astrojs/vercel`; one server function, `/api/translate`. Env vars there: `PUBLIC_SANITY_PROJECT_ID`, `ANTHROPIC_API_KEY`, `SANITY_API_WRITE_TOKEN`. |
+| Code | GitHub `electric-mustard/mustard-site`, branch `main` deploys to production. Work happens on branches; Vercel builds a preview per branch. |
+| Sanity project | Created 2026-10-13: project `z3603j0f`, dataset `production`, seeded with the five sample projects. Studio at `/admin`; CORS allows `http://localhost:4321` and the Vercel URL. Webhook `vercel` (deploy hook) rebuilds the site on publish; webhook `translate` calls `/api/translate`. Todd's `.env` holds the Project ID and a seed token (never committed). |
 
 ## Languages
 
 English at `/`, Norwegian at `/no/`. Every text field in Sanity is a pair (English required, Norwegian optional — falls back to English). The site's own labels (Client, Year, About, Impact, Next project, Close…) live in `src/lib/i18n.ts`. The EN / NO links in the header switch language for the current page and remember the choice; a later visit to `/` jumps to `/no/` if Norwegian was chosen. Blocks receive plain one-language strings from `getSite(lang)` and a `lang` prop for their own labels and links; they never see translations. Thin files in `src/pages/` and `src/pages/no/` render the shared templates in `src/templates/`.
+
+## Automatic Norwegian
+
+When a project or the Site document is published, Sanity calls `/api/translate` (`src/pages/api/translate.ts`, logic in `src/lib/translate.ts`). It fetches the published document, finds every English/Norsk pair whose Norwegian is empty, translates the English with Claude (`claude-sonnet-5-5`, override with `TRANSLATE_MODEL`) and writes the Norwegian back. Already-filled Norwegian is never touched, so the client can correct a translation and it sticks. The write-back fires the normal rebuild webhook, so the live site gets the Norwegian a minute or two after publishing. Optional hardening: set `SANITY_WEBHOOK_SECRET` on both the Vercel env and the Sanity webhook.
 
 ## Pages
 
@@ -72,6 +76,6 @@ English at `/`, Norwegian at `/no/`. Every text field in Sanity is a pair (Engli
 
 ## Not done yet
 
-- GitHub repo, Vercel project and deploy hook (steps in README.md). Add the production URL to Sanity CORS origins when it exists.
+- Custom domain on Vercel (and add it to Sanity CORS when it exists).
 - Web font, if wanted.
 - Any page other than home and project (no about or contact page in scope).
