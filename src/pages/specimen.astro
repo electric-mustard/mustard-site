@@ -1,0 +1,106 @@
+---
+// Specimen — v1.2 — Made by Electric Mustard
+// Every block, with sample content, in one place. Design reference only.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HomeSlider from '../components/HomeSlider.astro';
+import ProjectHero from '../components/ProjectHero.astro';
+import ProjectAbout from '../components/ProjectAbout.astro';
+import ProjectImpact from '../components/ProjectImpact.astro';
+import ProjectGallery from '../components/ProjectGallery.astro';
+import ProjectNav from '../components/ProjectNav.astro';
+import { seedSiteFor } from '../lib/sanity';
+
+const seedProjects = seedSiteFor('en').projects;
+
+const [one, two, three] = seedProjects;
+const blocks = [
+  { name: 'HomeSlider', note: 'Osmo layered slider. One slide per project.' },
+  { name: 'ProjectHero', note: 'Title section, then the one big image.' },
+  { name: 'ProjectAbout', note: 'Heading left, story and credits right.' },
+  { name: 'ProjectImpact', note: 'Side-scrolling results. Pins on desktop.' },
+  { name: 'ProjectGallery', note: 'Three layout presets: full, alternating, two up.' },
+  { name: 'ProjectNav', note: 'Next project and close.' },
+];
+---
+
+<BaseLayout lang="en" title="Specimen — all blocks" description="Design reference: every block with sample content." altPath="/specimen/">
+  <main>
+    <section class="specimen-intro block pad-lg bg-dark">
+      <div class="container">
+        <p class="eyebrow">Specimen</p>
+        <h1 class="specimen-title">Every block, once.</h1>
+        <ol class="specimen-list">
+          {
+            blocks.map((b) => (
+              <li>
+                <strong>{b.name}</strong> — {b.note}
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+    </section>
+
+    <p class="specimen-label">HomeSlider</p>
+    <HomeSlider projects={seedProjects} autoplay={0} siteName="Electric Mustard" />
+
+    <p class="specimen-label">ProjectHero</p>
+    {one.hero && <ProjectHero title={one.title} hero={one.hero} />}
+
+    <p class="specimen-label">ProjectAbout — light</p>
+    {one.about && <ProjectAbout about={one.about} />}
+
+    <p class="specimen-label">ProjectAbout — dark</p>
+    {two.about && <ProjectAbout about={{ ...two.about, background: 'dark' }} />}
+
+    <p class="specimen-label">ProjectImpact — light</p>
+    {one.impact && <ProjectImpact impact={one.impact} />}
+
+    <p class="specimen-label">ProjectImpact — dark</p>
+    {two.impact && <ProjectImpact impact={{ ...two.impact, background: 'dark' }} />}
+
+    <p class="specimen-label">ProjectGallery — alternating</p>
+    {one.gallery && <ProjectGallery gallery={one.gallery} />}
+
+    <p class="specimen-label">ProjectGallery — full</p>
+    {two.gallery && <ProjectGallery gallery={{ ...two.gallery, layout: 'full' }} />}
+
+    <p class="specimen-label">ProjectGallery — two up, accent</p>
+    {three.gallery && <ProjectGallery gallery={{ ...three.gallery, layout: 'pairs', background: 'accent' }} />}
+
+    <p class="specimen-label">ProjectNav</p>
+    <ProjectNav next={two} />
+  </main>
+</BaseLayout>
+
+<style>
+  .specimen-intro {
+    padding-top: calc(var(--header-height) + var(--block-pad));
+  }
+  .specimen-title {
+    font-size: var(--text-2xl);
+    font-weight: 500;
+    letter-spacing: var(--tracking-tight);
+    line-height: var(--leading-tight);
+    margin: var(--space-3) 0 var(--space-6);
+  }
+  .specimen-list {
+    margin: 0;
+    padding-left: 1.25em;
+    display: grid;
+    gap: var(--space-2);
+    max-width: 60ch;
+  }
+  .specimen-label {
+    position: relative;
+    z-index: 5;
+    margin: 0;
+    padding: var(--space-2) var(--gutter);
+    background: var(--color-accent);
+    color: var(--color-accent-fg);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+  }
+</style>

@@ -1,0 +1,79 @@
+---
+// ProjectGallery — v1.3 — Made by Electric Mustard
+// Schema: src/sanity/schemaTypes/projectGallery.ts
+// Images that scroll down the page, each wiping up as it arrives
+// (data-reveal="image", see src/lib/reveal.ts).
+// Layout presets: full width, alternating, two up.
+import type { ProjectGalleryData } from '../lib/types';
+import { blockClasses } from '../lib/block';
+
+interface Props {
+  gallery: ProjectGalleryData;
+}
+
+const { gallery } = Astro.props;
+const classes = blockClasses(gallery, { padding: 'md', background: 'light' });
+const layout = ['full', 'alternate', 'pairs'].includes(gallery.layout) ? gallery.layout : 'alternate';
+---
+
+<section class:list={['gallery', classes]} data-gallery>
+  <div class:list={['container', 'flush-phone', 'gallery__grid', `gallery__grid--${layout}`]}>
+    {
+      gallery.images.map((img) => (
+        <figure class="gallery__item flush-phone__item" data-reveal="image">
+          <img
+            src={img.src}
+            srcset={img.srcset}
+            sizes={layout === 'full' ? '100vw' : '(min-width: 768px) 60vw, 100vw'}
+            width={img.width}
+            height={img.height}
+            alt={img.alt}
+            loading="lazy"
+            decoding="async"
+            class="gallery__img"
+          />
+        </figure>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .gallery__grid {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .gallery__item {
+    margin: 0;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+  }
+
+  .gallery__img {
+    width: 100%;
+    height: auto;
+  }
+
+  @media (min-width: 768px) {
+    .gallery__grid {
+      gap: var(--space-7);
+    }
+
+    /* Alternating: wide image left, then a narrower one pushed right. */
+    .gallery__grid--alternate {
+      grid-template-columns: repeat(12, 1fr);
+    }
+    .gallery__grid--alternate .gallery__item:nth-child(odd) {
+      grid-column: 1 / span 8;
+    }
+    .gallery__grid--alternate .gallery__item:nth-child(even) {
+      grid-column: 6 / span 7;
+    }
+
+    .gallery__grid--pairs {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+</style>

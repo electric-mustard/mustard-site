@@ -1,0 +1,697 @@
+---
+// HomeSlider — v1.13 — Made by Electric Mustard
+// Schema: src/sanity/schemaTypes/homeSlider.ts
+// Based on Osmo Supply's "Layered Image Slider" (GSAP + Observer). The Osmo
+// markup, data attributes and animation logic are kept as published. Changes
+// are limited to: tokens instead of hard-coded values, full-viewport layout,
+// re-initialising after Astro page transitions, remembering the last opened
+// project, letting a click anywhere on the slide open the active project,
+// and stepping slides with the scroll wheel.
+import type { Project } from '../lib/types';
+import { isLang, localePath, t, type Lang } from '../lib/i18n';
+
+interface Props {
+  projects: Project[];
+  /** Seconds between slides. 0 = off. */
+  autoplay?: number;
+  /** Shown bottom left, in line with the arrows. */
+  siteName?: string;
+  /** Page language: links and labels follow it. */
+  lang?: Lang;
+}
+
+const { projects, autoplay = 5, siteName, lang: langProp } = Astro.props;
+const lang: Lang = isLang(langProp) ? langProp : 'en';
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+
+<section
+  data-layered-slider-init
+  data-layered-slider-autoplay={autoplay}
+  class="layered-slider"
+  aria-roledescription="carousel"
+  aria-label={t(lang, 'projects')}
+>
+  <div class="layered-slider__container">
+    <div class="layered-slider__bg-collection">
+      <div class="layered-slider__bg-list">
+        {
+          projects.map((p, i) => (
+            <div data-layered-slider-bg data-active={i === 0 ? '' : undefined} class="layered-slider__bg-item">
+              <img
+                src={p.hero?.image.src ?? p.cover.src}
+                srcset={p.hero?.image.srcset ?? p.cover.srcset}
+                sizes="100vw"
+                width={p.hero?.image.width ?? p.cover.width}
+                height={p.hero?.image.height ?? p.cover.height}
+                alt=""
+                loading={i === 0 ? 'eager' : 'lazy'}
+                decoding="async"
+                class="layered-slider__bg-img"
+              />
+            </div>
+          ))
+        }
+      </div>
+    </div>
+    <div class="layered-slider__bg-dark"></div>
+    <div class="layered-slider__text-collection">
+      <div class="layered-slider__text-list">
+        {
+          projects.map((p, i) => (
+            <div data-layered-slider-title data-active={i === 0 ? '' : undefined} class="layered-slider__text-item">
+              <a href={localePath(lang, `/work/${p.slug}/`)} class="layered-slider__text-title" data-slug={p.slug}>
+                {p.title}
+              </a>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+    <div data-layered-slider-mask class="layered-slider__mask-collection">
+      <div class="layered-slider__mask-list">
+        {
+          projects.map((p, i) => (
+            <div data-layered-slider-mask-item data-active={i === 0 ? '' : undefined} class="layered-slider__mask-item">
+              <img
+                src={p.cover.src}
+                srcset={p.cover.srcset}
+                sizes="(max-width: 479px) 14rem, 18rem"
+                width={p.cover.width}
+                height={p.cover.height}
+                alt={p.cover.alt}
+                draggable="false"
+                loading={i === 0 ? 'eager' : 'lazy'}
+                decoding="async"
+                class="layered-slider__mask-img"
+              />
+            </div>
+          ))
+        }
+      </div>
+    </div>
+    <div class="layered-slider__overlay">
+      <div class="layered-slider__overlay-top">
+        <span data-layered-slider-current class="layered-slider__span">01</span>
+        <div class="layered-slider__progress">
+          <div data-layered-slider-fill class="layered-slider__progress-inner"></div>
+        </div>
+        <span data-layered-slider-total class="layered-slider__span">{pad(projects.length)}</span>
+      </div>
+      <div class="layered-slider__overlay-btm">
+        {siteName && <span class="layered-slider__brand notranslate" translate="no">{siteName}</span>}
+        <div class="layered-slider__nav">
+          <button data-layered-slider-prev class="layered-slider__nav-button" aria-label={t(lang, 'prevSlide')}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="layered-slider__nav-icon" aria-hidden="true">
+              <path d="M20 11v2H4v-2zM8 13v2H6v-2zm2 2v2H8v-2zm2 2v2h-2v-2zm-4-6V9H6v2z"></path>
+              <path d="M10 15V7H8v8zm2 2V5h-2v12z"></path>
+            </svg>
+          </button>
+          <button data-layered-slider-next class="layered-slider__nav-button layered-slider__nav-button--next" aria-label={t(lang, 'nextSlide')}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="layered-slider__nav-icon" aria-hidden="true">
+              <path d="M20 11v2H4v-2zM8 13v2H6v-2zm2 2v2H8v-2zm2 2v2h-2v-2zm-4-6V9H6v2z"></path>
+              <path d="M10 15V7H8v8zm2 2V5h-2v12z"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .layered-slider {
+    color: var(--color-fg);
+    background: var(--color-bg);
+    -webkit-user-select: none;
+    user-select: none;
+    position: relative;
+    overflow: clip;
+    height: 100svh;
+    min-height: 34rem;
+    cursor: pointer; /* click anywhere opens the active project */
+  }
+
+  .layered-slider__container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+
+  .layered-slider__bg-collection {
+    z-index: 0;
+    position: absolute;
+    inset: 0%;
+    overflow: clip;
+  }
+
+  .layered-slider__bg-item {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0%;
+  }
+
+  .layered-slider__bg-img {
+    object-fit: cover;
+    -webkit-user-select: none;
+    user-select: none;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .layered-slider__bg-dark {
+    z-index: 2;
+    background-color: var(--color-scrim);
+    position: absolute;
+    inset: 0%;
+  }
+
+  .layered-slider__text-collection {
+    z-index: 3;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    position: absolute;
+    inset: 0;
+  }
+
+  .layered-slider__text-list {
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    display: flex;
+  }
+
+  .layered-slider__text-item {
+    text-align: center;
+    cursor: pointer;
+    max-width: 80%;
+    position: absolute;
+  }
+
+  .layered-slider__text-title {
+    letter-spacing: var(--tracking-tight);
+    color: inherit;
+    font-family: var(--font-sans);
+    font-size: var(--text-2xl); /* Osmo: 4em */
+    font-weight: 500;
+    line-height: 0.8;
+    text-decoration: none;
+    white-space: nowrap;
+    display: inline-block;
+  }
+
+  .layered-slider__mask-collection {
+    z-index: 3;
+    aspect-ratio: 4 / 5;
+    border-radius: var(--radius-md);
+    width: 20rem; /* Osmo: 20em, hanging 30% off the bottom edge */
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    overflow: hidden;
+    transform: translate(-50%, 30%);
+  }
+
+  .layered-slider__mask-list {
+    position: absolute;
+    inset: 0%;
+  }
+
+  .layered-slider__mask-item {
+    flex: none;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0%;
+    overflow: hidden;
+  }
+
+  .layered-slider__mask-img {
+    pointer-events: none;
+    object-fit: cover;
+    -webkit-user-select: none;
+    user-select: none;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .layered-slider__overlay {
+    z-index: 4;
+    pointer-events: none;
+    flex-flow: column;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: var(--container);
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 var(--edge);
+    display: flex;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+
+  /* Sits in the header band, centred on the same line as the logo. */
+  .layered-slider__overlay-top {
+    gap: var(--space-2);
+    pointer-events: auto;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    height: var(--header-height);
+  }
+
+  .layered-slider__span {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wide);
+  }
+
+  .layered-slider__progress {
+    background-color: var(--color-line);
+    border-radius: var(--radius-pill);
+    width: 6em;
+    height: 2px;
+    overflow: hidden;
+  }
+
+  .layered-slider__progress-inner {
+    transform-origin: 0%;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    background-color: var(--color-fg);
+    transform: scale3d(0, 1, 1);
+  }
+
+  /* Mirrors the header band at the top: same height, controls centred in it. */
+  .layered-slider__overlay-btm {
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: var(--header-height);
+    margin-bottom: var(--space-3); /* a touch more room under the controls than above the header */
+    display: flex;
+    position: relative;
+  }
+
+  .layered-slider__brand {
+    font-size: var(--text-sm);
+    letter-spacing: var(--tracking-normal);
+  }
+
+  .layered-slider__nav {
+    gap: var(--space-4);
+    pointer-events: auto;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+  }
+
+  .layered-slider__nav-button {
+    background: none;
+    border: 0;
+    padding: 0;
+    width: 2.75rem;
+    height: 2.75rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: inherit;
+    opacity: var(--icon-dim);
+    transition: opacity var(--duration-fast) var(--ease-out);
+  }
+  .layered-slider__nav-button:hover {
+    opacity: 1;
+  }
+  .layered-slider__nav-button--next .layered-slider__nav-icon {
+    transform: scaleX(-1); /* same arrow, pointing right */
+  }
+
+  .layered-slider__nav-icon {
+    width: var(--icon-size);
+    height: var(--icon-size);
+    display: block;
+  }
+
+  /* Before the script has positioned the slides, show only the first one. */
+  .layered-slider:not([data-ready]) [data-layered-slider-bg]:not([data-active]),
+  .layered-slider:not([data-ready]) [data-layered-slider-title]:not([data-active]),
+  .layered-slider:not([data-ready]) [data-layered-slider-mask-item]:not([data-active]) {
+    opacity: 0;
+  }
+
+  @media screen and (max-width: 767px) {
+    .layered-slider__overlay-btm {
+      justify-content: center;
+      align-items: center;
+    }
+
+    .layered-slider__nav {
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+
+    /* The cover card hangs where the name would sit, so the name steps aside on phones */
+    .layered-slider__brand {
+      display: none;
+    }
+    /* The top band is full on phones (logo, EN / NO, mail), so the counter sits just under the title */
+    .layered-slider__overlay-top {
+      position: absolute;
+      left: 50%;
+      top: calc(50% - 6svh + 2.5rem);
+      height: auto;
+      transform: translateX(-50%);
+    }
+    .layered-slider__progress {
+      width: 3em;
+    }
+  }
+
+  @media screen and (max-width: 479px) {
+    .layered-slider__mask-collection {
+      width: 14rem;
+    }
+    .layered-slider__text-collection {
+      padding-bottom: 12svh;
+    }
+  }
+</style>
+
+<script>
+  import gsap from 'gsap';
+  import { Observer } from 'gsap/Observer';
+  import { CustomEase } from 'gsap/CustomEase';
+
+  gsap.registerPlugin(Observer, CustomEase);
+  CustomEase.create('osmo', 'M0,0 C0.625,0.05 0,1 1,1');
+
+  type SliderRoot = HTMLElement & { _layeredSlider?: { goTo: (d: number) => void; destroy: () => void } | null };
+
+  function initLayeredImageSlider() {
+    document.querySelectorAll<SliderRoot>('[data-layered-slider-init]').forEach((root) => {
+      if (root._layeredSlider) root._layeredSlider.destroy();
+
+      const titles = [...root.querySelectorAll<HTMLElement>('[data-layered-slider-title]')];
+      if (!titles.length) return;
+      const count = titles.length;
+
+      const backgrounds = [...root.querySelectorAll<HTMLElement>('[data-layered-slider-bg]')];
+      const maskItems = [...root.querySelectorAll<HTMLElement>('[data-layered-slider-mask-item]')];
+      const maskFrame = root.querySelector<HTMLElement>('[data-layered-slider-mask]');
+      const fill = root.querySelector<HTMLElement>('[data-layered-slider-fill]');
+      const currentEl = root.querySelector<HTMLElement>('[data-layered-slider-current]');
+      const totalEl = root.querySelector<HTMLElement>('[data-layered-slider-total]');
+      const prevBtn = root.querySelector<HTMLElement>('[data-layered-slider-prev]');
+      const nextBtn = root.querySelector<HTMLElement>('[data-layered-slider-next]');
+
+      // All elements that 'pause' the autoplay on hover
+      const controls = [...new Set([...titles, ...root.querySelectorAll<HTMLElement>('a, button')])];
+
+      // Autoplay, value is seconds between slides, 0 disables autoplay
+      const autoplayAttr = root.getAttribute('data-layered-slider-autoplay');
+      const autoplay = autoplayAttr !== null ? parseFloat(autoplayAttr) : 5;
+
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const clamp = gsap.utils.clamp;
+      const wrap = (distance: number) => distance - count * Math.round(distance / count);
+
+      const transitionDuration = 1;
+      const backgroundZoom = 0.05;
+      const titleGap = 0.5;
+      const titleSpacing = 40;
+
+      if (totalEl) totalEl.textContent = String(count).padStart(2, '0');
+
+      let titleStep = 0;
+      let maskStep = 0;
+      const measure = () => {
+        const widestTitle = Math.max(...titles.map((title) => title.offsetWidth));
+        titleStep = Math.max(root.clientWidth * titleGap, widestTitle + titleSpacing);
+        maskStep = maskFrame ? maskFrame.clientWidth : root.clientWidth;
+      };
+      measure();
+
+      const state = { progress: 0 };
+      let activeIndex = -1;
+
+      // The active slide has [data-active] on its background, title, and mask
+      const setActive = (previousIndex: number, index: number) => {
+        [backgrounds, titles, maskItems].forEach((list) => {
+          if (previousIndex >= 0 && list[previousIndex]) list[previousIndex].removeAttribute('data-active');
+          if (list[index]) list[index].setAttribute('data-active', '');
+        });
+      };
+
+      const render = (progress: number) => {
+        const centeredIndex = ((Math.round(progress) % count) + count) % count;
+
+        for (let i = 0; i < count; i++) {
+          // How far this slide sits from the centre: signed (left / right) and absolute.
+          const offset = wrap(i - progress);
+          const distance = Math.abs(offset);
+
+          const background = backgrounds[i];
+          if (background) {
+            const backgroundOpacity = clamp(0, 1, 1 - distance);
+            gsap.set(background, {
+              opacity: backgroundOpacity,
+              scale: 1 + backgroundZoom - backgroundZoom * backgroundOpacity,
+              zIndex: Math.round(backgroundOpacity * 100),
+            });
+          }
+
+          gsap.set(titles[i], {
+            x: offset * titleStep,
+            opacity: i === centeredIndex ? 1 : 0.4,
+            pointerEvents: 'auto',
+          });
+
+          const maskItem = maskItems[i];
+          if (maskItem) {
+            gsap.set(maskItem, { x: offset * maskStep });
+          }
+        }
+
+        // Sync the counter and [data-active] to whichever slide is now centred.
+        if (centeredIndex !== activeIndex) {
+          const previousIndex = activeIndex;
+          activeIndex = centeredIndex;
+          setActive(previousIndex, centeredIndex);
+          if (currentEl) currentEl.textContent = String(centeredIndex + 1).padStart(2, '0');
+        }
+      };
+
+      let hovering = 0;
+      let autoTween: gsap.core.Tween | null = null;
+      const startAutoplay = () => {
+        if (!autoTween) return;
+        autoTween.restart();
+        if (hovering > 0) autoTween.pause();
+      };
+
+      let slideTween: gsap.core.Tween | null = null;
+      let current = 0;
+      function goTo(delta: number) {
+        current += delta;
+        if (slideTween) slideTween.kill();
+        slideTween = gsap.to(state, {
+          progress: current,
+          duration: reduced ? 0 : transitionDuration,
+          ease: 'osmo',
+          onUpdate: () => render(state.progress),
+        });
+        startAutoplay();
+      }
+
+      // Step to a specific slide by index
+      function goToIndex(i: number) {
+        const delta = wrap(i - current);
+        if (delta !== 0) goTo(delta);
+      }
+
+      // Autoplay fills the bar
+      if (autoplay > 0 && !reduced && fill) {
+        gsap.set(fill, { scaleX: 0, transformOrigin: 'left center' });
+        autoTween = gsap.to(fill, {
+          scaleX: 1,
+          duration: autoplay,
+          ease: 'none',
+          paused: true,
+          onComplete: () => goTo(1),
+        });
+      }
+
+      // Support a horizontal swipe gesture to navigate
+      let gestureUsed = false;
+      const observer = Observer.create({
+        target: root,
+        type: 'touch,pointer',
+        dragMinimum: 10,
+        tolerance: 25,
+        lockAxis: true,
+        onDragStart() {
+          gestureUsed = false;
+        },
+        onLeft() {
+          if (!gestureUsed) {
+            gestureUsed = true;
+            goTo(1);
+          }
+        },
+        onRight() {
+          if (!gestureUsed) {
+            gestureUsed = true;
+            goTo(-1);
+          }
+        },
+      });
+
+      // Scroll wheel / trackpad steps the slider: down or right = next, up or
+      // left = previous. One step per gesture, with a short cooldown so a
+      // trackpad's momentum does not fire several steps at once.
+      let wheelLocked = false;
+      const wheelStep = (delta: number) => {
+        if (wheelLocked) return;
+        wheelLocked = true;
+        goTo(delta);
+        window.setTimeout(() => (wheelLocked = false), transitionDuration * 1000 + 200);
+      };
+      const wheelObserver = Observer.create({
+        target: root,
+        type: 'wheel',
+        tolerance: 12,
+        preventDefault: true,
+        onDown: () => wheelStep(1),
+        onUp: () => wheelStep(-1),
+        onRight: () => wheelStep(-1),
+        onLeft: () => wheelStep(1),
+      });
+
+      const onPrev = () => goTo(-1);
+      const onNext = () => goTo(1);
+      if (prevBtn) prevBtn.addEventListener('click', onPrev);
+      if (nextBtn) nextBtn.addEventListener('click', onNext);
+
+      // Click a title: the active one lets its link through, any other jumps to it.
+      const onTitleClick = (e: Event) => {
+        const i = titles.indexOf(e.currentTarget as HTMLElement);
+        if (i === activeIndex) return;
+        e.preventDefault();
+        goToIndex(i);
+      };
+      titles.forEach((title) => title.addEventListener('click', onTitleClick));
+
+      // Click anywhere on the slide (not a button or another title) opens the
+      // active project. A drag that moved more than a few pixels is not a click.
+      let downX = 0;
+      let downY = 0;
+      const onPointerDown = (e: PointerEvent) => {
+        downX = e.clientX;
+        downY = e.clientY;
+      };
+      const onRootClick = (e: MouseEvent) => {
+        const target = e.target as Element;
+        if (target.closest('button, [data-layered-slider-title]')) return;
+        if (Math.hypot(e.clientX - downX, e.clientY - downY) > 10) return;
+        titles[activeIndex]?.querySelector<HTMLAnchorElement>('a')?.click();
+      };
+      root.addEventListener('pointerdown', onPointerDown);
+      root.addEventListener('click', onRootClick);
+
+      // Keyboard: left / right arrows step the slider, Enter opens the active one
+      const onKey = (e: KeyboardEvent) => {
+        if (e.key === 'ArrowRight') goTo(1);
+        if (e.key === 'ArrowLeft') goTo(-1);
+        if (e.key === 'Enter' && !(e.target as Element)?.closest('a, button')) {
+          titles[activeIndex]?.querySelector<HTMLAnchorElement>('a')?.click();
+        }
+      };
+      window.addEventListener('keydown', onKey);
+
+      // Autoplay pauses only while an interactive control is hovered
+      const onEnter = () => {
+        hovering++;
+        if (autoTween) autoTween.pause();
+      };
+      const onLeave = () => {
+        hovering = Math.max(0, hovering - 1);
+        if (autoTween && hovering === 0) autoTween.resume();
+      };
+      controls.forEach((el) => {
+        el.addEventListener('pointerenter', onEnter);
+        el.addEventListener('pointerleave', onLeave);
+      });
+
+      const onResize = () => {
+        measure();
+        render(state.progress);
+      };
+      window.addEventListener('resize', onResize);
+
+      // Title widths change when the web font swaps in, so re-measure then too.
+      if (document.fonts) document.fonts.ready.then(onResize);
+
+      // Start on the project the visitor just closed, if any.
+      let startIndex = 0;
+      try {
+        const last = sessionStorage.getItem('em:lastProject');
+        const found = titles.findIndex((t) => t.querySelector('a')?.dataset.slug === last);
+        if (found >= 0) startIndex = found;
+      } catch {
+        /* storage unavailable */
+      }
+      current = startIndex;
+      state.progress = startIndex;
+      render(startIndex);
+      root.setAttribute('data-ready', '');
+      startAutoplay();
+
+      root._layeredSlider = {
+        goTo,
+        destroy() {
+          observer.kill();
+          wheelObserver.kill();
+          if (slideTween) slideTween.kill();
+          if (autoTween) autoTween.kill();
+          window.removeEventListener('resize', onResize);
+          window.removeEventListener('keydown', onKey);
+          root.removeEventListener('pointerdown', onPointerDown);
+          root.removeEventListener('click', onRootClick);
+          if (prevBtn) prevBtn.removeEventListener('click', onPrev);
+          if (nextBtn) nextBtn.removeEventListener('click', onNext);
+          titles.forEach((title) => title.removeEventListener('click', onTitleClick));
+          controls.forEach((el) => {
+            el.removeEventListener('pointerenter', onEnter);
+            el.removeEventListener('pointerleave', onLeave);
+          });
+          root._layeredSlider = null;
+        },
+      };
+    });
+  }
+
+  // Initialise on first load, and again after every page transition.
+  // after-swap runs before the new page is painted, so the active slide is
+  // in place (with its view-transition-name) in time for the morph back.
+  document.addEventListener('astro:after-swap', initLayeredImageSlider);
+  document.addEventListener('astro:page-load', () => {
+    const root = document.querySelector<SliderRoot>('[data-layered-slider-init]');
+    if (root && !root._layeredSlider) initLayeredImageSlider();
+  });
+  document.addEventListener('astro:before-swap', () => {
+    document.querySelectorAll<SliderRoot>('[data-layered-slider-init]').forEach((root) => root._layeredSlider?.destroy());
+  });
+</script>

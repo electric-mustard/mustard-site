@@ -1,0 +1,238 @@
+/* Global styles — v1.7 — Made by Electric Mustard
+   Reset, base type, block presets and page transitions. Block-specific styles
+   live inside each block. */
+
+@import "./tokens.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  overscroll-behavior-x: none; /* sideways swipes on the impact row never trigger browser back */
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  --block-card: var(--color-card);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+}
+
+/* Light pages (project pages) */
+body[data-theme='light'] {
+  background: var(--color-light-bg);
+  color: var(--color-light-fg);
+  --block-card: var(--color-light-card);
+}
+
+img,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ── Block presets ──────────────────────────────────────────
+   Every block has these two standard options from Sanity:
+   padding (none / sm / md / lg) and background (dark / light / accent). */
+
+.block {
+  position: relative;
+  background: var(--block-bg, transparent);
+  color: var(--block-fg, inherit);
+  padding-top: var(--block-pad, 0);
+  padding-bottom: var(--block-pad, 0);
+}
+
+.pad-none { --block-pad: var(--pad-none); }
+.pad-sm   { --block-pad: var(--pad-sm); }
+.pad-md   { --block-pad: var(--pad-md); }
+.pad-lg   { --block-pad: var(--pad-lg); }
+
+.bg-dark {
+  --block-bg: var(--color-bg);
+  --block-fg: var(--color-fg);
+  --block-fg-muted: var(--color-fg-muted);
+  --block-line: var(--color-line);
+  --block-card: var(--color-card);
+}
+.bg-light {
+  --block-bg: var(--color-light-bg);
+  --block-fg: var(--color-light-fg);
+  --block-fg-muted: var(--color-light-fg-muted);
+  --block-line: var(--color-light-line);
+  --block-card: var(--color-light-card);
+}
+.bg-accent {
+  --block-bg: var(--color-accent);
+  --block-fg: var(--color-accent-fg);
+  --block-fg-muted: rgba(11, 11, 11, 0.6);
+  --block-line: rgba(11, 11, 11, 0.2);
+  --block-card: rgba(255, 255, 255, 0.55);
+}
+
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Text columns inside the container, indented like the content column on wearecollins.com */
+.container.inset {
+  padding-inline: calc(var(--gutter) + var(--inset));
+}
+
+/* Images run edge to edge on phones */
+@media (max-width: 767px) {
+  .container.flush-phone {
+    padding-inline: 0;
+  }
+  .container.flush-phone .flush-phone__item {
+    border-radius: 0;
+  }
+}
+
+/* Small uppercase label used across blocks */
+.eyebrow {
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--block-fg-muted, var(--color-fg-muted));
+}
+
+/* ── Page transitions (app-like) ────────────────────────────
+   Project pages are sheets. Opening one (from home or from another
+   project) slides it up over the page beneath, which settles back a
+   touch. Closing (×, logo, Close, Esc) slides it down again to reveal
+   home. The header stays put and only its button crossfades. */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--duration-page);
+  animation-timing-function: var(--ease-page);
+  mix-blend-mode: normal;
+}
+
+/* Forward: the new sheet rises over the old page */
+::view-transition-old(root) {
+  animation-name: sheet-under-out;
+}
+::view-transition-new(root) {
+  animation-name: sheet-in;
+  z-index: 2;
+  clip-path: inset(-40vh 0 0 0); /* room above the sheet for its shadow */
+  filter: var(--sheet-shadow);
+}
+
+/* Back: the old sheet drops away, the page beneath comes forward */
+html[data-astro-transition="back"]::view-transition-old(root),
+html[data-astro-transition="back"]::view-transition-new(root) {
+  animation-duration: var(--duration-page-back);
+  animation-timing-function: var(--ease-page-back);
+}
+html[data-astro-transition="back"]::view-transition-old(root) {
+  animation-name: sheet-out;
+  z-index: 2;
+  clip-path: inset(-40vh 0 0 0);
+  filter: var(--sheet-shadow);
+}
+html[data-astro-transition="back"]::view-transition-new(root) {
+  animation-name: sheet-under-in;
+  clip-path: none;
+  filter: none;
+  z-index: 1; /* beneath the dropping sheet */
+}
+
+@keyframes sheet-in {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes sheet-out {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
+@keyframes sheet-under-out {
+  to { transform: scale(0.96); }
+}
+@keyframes sheet-under-in {
+  from { transform: scale(0.96); }
+}
+
+/* The header is its own layer: it does not slide, its button just crossfades. */
+::view-transition-group(site-header) {
+  z-index: 3;
+}
+
+/* ── Reveals ────────────────────────────────────────────────
+   Anything with data-reveal is hidden until src/lib/reveal.ts moves it
+   into place (masked lines, wipes — never a fade). */
+[data-reveal] {
+  visibility: hidden;
+}
+/* Image frames hide with opacity instead, so the browser still loads the picture inside. */
+[data-reveal='image'] {
+  visibility: visible;
+  opacity: 0;
+}
+.reveal-line {
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    visibility: visible;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 1ms;
+  }
+}

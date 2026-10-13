@@ -1,0 +1,97 @@
+---
+// ProjectAbout — v1.5 — Made by Electric Mustard
+// Schema: src/sanity/schemaTypes/projectAbout.ts
+// A short heading on the left, the story and credits on the right.
+import type { ProjectAboutData } from '../lib/types';
+import { blockClasses, paragraphs } from '../lib/block';
+import { t, type Lang } from '../lib/i18n';
+
+interface Props {
+  about: ProjectAboutData;
+  /** Page language for the block's own labels. */
+  lang?: Lang;
+}
+
+const { about, lang = 'en' } = Astro.props;
+const classes = blockClasses(about, { padding: 'lg', background: 'light' });
+const body = paragraphs(about.body);
+---
+
+<section class:list={['project-about', classes]}>
+  <div class="container inset project-about__grid" data-reveal-group>
+    <p class="eyebrow project-about__label" data-reveal>{t(lang, 'about')}</p>
+    <h2 class="project-about__heading" data-reveal>{about.heading}</h2>
+    <div class="project-about__body">
+      {body.map((p) => <p data-reveal>{p}</p>)}
+      {
+        about.credits && about.credits.length > 0 && (
+          <ul class="project-about__credits" data-reveal="block">
+            {about.credits.map((c) => (
+              <li>{c}</li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Label on its own row; heading and body start on the same line beneath it. */
+  .project-about__grid {
+    display: grid;
+    grid-template-areas:
+      'label'
+      'heading'
+      'body';
+    row-gap: var(--space-5);
+  }
+  .project-about__label {
+    grid-area: label;
+  }
+  .project-about__heading {
+    grid-area: heading;
+  }
+  .project-about__body {
+    grid-area: body;
+  }
+
+  .project-about__heading {
+    font-size: var(--text-xl);
+    font-weight: 500;
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-tight);
+    text-wrap: balance;
+  }
+
+  .project-about__body {
+    display: grid;
+    gap: var(--space-5);
+    font-size: var(--text-lg);
+    line-height: var(--leading-normal);
+    max-width: 60ch;
+  }
+
+  .project-about__credits {
+    list-style: none;
+    margin: var(--space-4) 0 0;
+    padding: var(--space-5) 0 0;
+    border-top: 1px solid var(--block-line);
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--block-fg-muted);
+  }
+
+  @media (min-width: 768px) {
+    .project-about__grid {
+      grid-template-columns: 1fr 1.9fr; /* Collins: 378 / 720 */
+      grid-template-areas:
+        'label .'
+        'heading body';
+      column-gap: var(--space-8);
+      row-gap: var(--space-5);
+      align-items: start;
+    }
+  }
+</style>

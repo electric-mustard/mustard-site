@@ -1,0 +1,40 @@
+---
+// Project page template — v1.1 — Made by Electric Mustard
+// Title & hero → About → Impact (side scroll) → Gallery → Next / Close.
+// Rendered by src/pages/work/[slug].astro and src/pages/no/work/[slug].astro.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProjectHero from '../components/ProjectHero.astro';
+import ProjectAbout from '../components/ProjectAbout.astro';
+import ProjectImpact from '../components/ProjectImpact.astro';
+import ProjectGallery from '../components/ProjectGallery.astro';
+import ProjectNav from '../components/ProjectNav.astro';
+import { getNextProject, getSite } from '../lib/sanity';
+import type { Lang } from '../lib/i18n';
+import type { Project } from '../lib/types';
+
+interface Props {
+  lang: Lang;
+  project: Project;
+}
+
+const { lang, project } = Astro.props;
+const site = await getSite(lang);
+const next = await getNextProject(lang, project.slug);
+const hero = project.hero ?? { image: project.cover, padding: 'lg' as const, background: 'light' as const };
+---
+
+<BaseLayout
+  lang={lang}
+  title={`${project.title} — ${site.siteName}`}
+  description={project.about?.heading ?? site.description}
+  projectSlug={project.slug}
+  altPath={`/work/${project.slug}/`}
+>
+  <main class="project">
+    <ProjectHero title={project.title} hero={hero} lang={lang} />
+    {project.about && <ProjectAbout about={project.about} lang={lang} />}
+    {project.impact && <ProjectImpact impact={project.impact} lang={lang} />}
+    {project.gallery && <ProjectGallery gallery={project.gallery} />}
+    <ProjectNav next={next} lang={lang} />
+  </main>
+</BaseLayout>

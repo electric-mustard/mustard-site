@@ -1,0 +1,21 @@
+---
+// Home page template — v1.1 — Made by Electric Mustard
+// Rendered by src/pages/index.astro (English) and src/pages/no/index.astro (Norwegian).
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HomeSlider from '../components/HomeSlider.astro';
+import { getSite } from '../lib/sanity';
+import type { Lang } from '../lib/i18n';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const site = await getSite(lang);
+---
+
+<BaseLayout lang={lang} title={site.siteName} description={site.description} mailTo={site.contactEmail} altPath="/">
+  <main>
+    <h1 class="visually-hidden">{site.siteName}</h1>
+    <HomeSlider projects={site.projects} autoplay={site.autoplay} siteName={site.siteName} lang={lang} />
+  </main>
+</BaseLayout>

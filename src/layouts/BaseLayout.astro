@@ -1,0 +1,115 @@
+---
+// BaseLayout — v2.0 — Made by Electric Mustard
+// Wraps every page: head, global styles, page transitions, text reveals,
+// keyboard shortcuts, language memory and the site header.
+import { ClientRouter } from 'astro:transitions';
+import SiteHeader from '../components/SiteHeader.astro';
+import { localePath, otherLang, type Lang } from '../lib/i18n';
+import '../styles/global.css';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description?: string;
+  /** Set on project pages: light theme, close button, Esc to close, "back" transitions. */
+  projectSlug?: string;
+  /** Email for the mail icon shown top right on the home page. */
+  mailTo?: string;
+  /** This page's path without a language prefix, e.g. "/work/northwind/". */
+  altPath?: string;
+}
+
+const { lang, title, description = '', projectSlug, mailTo, altPath = '/' } = Astro.props;
+const theme = projectSlug ? 'light' : 'dark';
+const altUrl = localePath(otherLang(lang), altPath);
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content={theme === 'light' ? '#f8f8f7' : '#0b0b0b'} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="alternate" hreflang={otherLang(lang)} href={altUrl} />
+    <title>{title}</title>
+    <ClientRouter />
+  </head>
+  <body data-theme={theme} data-project-slug={projectSlug} data-lang={lang} data-alt-url={altUrl}>
+    <SiteHeader lang={lang} showClose={Boolean(projectSlug)} mailTo={mailTo} altUrl={altUrl} theme={theme} />
+    <slot />
+
+    <script>
+      import { navigate } from 'astro:transitions/client';
+      import { destroyReveals, initReveals } from '../lib/reveal';
+
+      // Page-transition direction. Links marked data-nav-back (logo, close,
+      // "Close" at the end of a project) and the Esc key play the reverse
+      // animation; the home slider then re-opens on that project.
+      interface PreparationEvent extends Event {
+        sourceElement?: Element | null;
+        direction: 'forward' | 'back';
+      }
+
+      let forceBack = false;
+      let navigatedOnce = false;
+
+      document.addEventListener('astro:before-preparation', (event) => {
+        const e = event as PreparationEvent;
+        if (forceBack || e.sourceElement?.closest('[data-nav-back]')) e.direction = 'back';
+        forceBack = false;
+      });
+
+      document.addEventListener('astro:before-swap', () => {
+        destroyReveals();
+        navigatedOnce = true;
+      });
+
+      // Language memory: the EN / NO links store the choice; a first visit
+      // to the "wrong" language jumps to the remembered one.
+      const storedLang = () => {
+        try {
+          return localStorage.getItem('em:lang');
+        } catch {
+          return null;
+        }
+      };
+      document.addEventListener('click', (e) => {
+        const link = (e.target as Element).closest<HTMLElement>('[data-set-lang]');
+        if (!link) return;
+        try {
+          localStorage.setItem('em:lang', link.dataset.setLang || 'en');
+        } catch {
+          /* storage unavailable */
+        }
+      });
+
+      document.addEventListener('astro:page-load', () => {
+        const { lang, altUrl, projectSlug: slug } = document.body.dataset;
+        const wanted = storedLang();
+        if (!navigatedOnce && wanted && lang && wanted !== lang && altUrl) {
+          navigate(altUrl, { history: 'replace' });
+          return;
+        }
+        if (slug) {
+          try {
+            sessionStorage.setItem('em:lastProject', slug);
+          } catch {
+            /* storage unavailable: slider simply starts at the first slide */
+          }
+        }
+        // After a page transition, let the sheet land before text moves.
+        initReveals(navigatedOnce ? 0.4 : 0.05);
+      });
+
+      // Esc closes a project (to the home page in the same language)
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape' || !document.body.dataset.projectSlug) return;
+        forceBack = true;
+        navigate(document.body.dataset.lang === 'no' ? '/no/' : '/');
+      });
+    </script>
+  </body>
+</html>

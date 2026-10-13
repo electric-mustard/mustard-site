@@ -1,0 +1,18 @@
+---
+// Project page (English) — v2.0 — Made by Electric Mustard
+import ProjectPage from '../../templates/ProjectPage.astro';
+import { getProjects } from '../../lib/sanity';
+import type { Project } from '../../lib/types';
+
+export async function getStaticPaths() {
+  const projects = await getProjects('en');
+  return projects.map((project) => ({ params: { slug: project.slug }, props: { project } }));
+}
+
+interface Props {
+  project: Project;
+}
+const { project } = Astro.props;
+---
+
+<ProjectPage lang="en" project={project} />

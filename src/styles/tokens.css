@@ -1,0 +1,115 @@
+/* Design tokens — v1.8 — Made by Electric Mustard
+   The single source of truth for colour, type, spacing, radius, motion and
+   buttons. Blocks use these variables only; nothing is hard-coded in a block.
+   Change a value here and every block follows. */
+
+:root {
+  /* ── Colour ─────────────────────────────────────────────── */
+  --color-bg: #0b0b0b;
+  --color-fg: #f4f1ea;
+  --color-fg-muted: rgba(244, 241, 234, 0.55);
+  --color-line: rgba(244, 241, 234, 0.18);
+  --color-accent: #e8b931;
+  --color-accent-fg: #0b0b0b;
+  --color-scrim: rgba(0, 0, 0, 0.18); /* darkening layer over slider images */
+
+  /* Light surface (used by the "Light" background preset) */
+  --color-light-bg: #f8f8f7;
+  --color-light-fg: #141414;
+  --color-light-fg-muted: rgba(20, 20, 20, 0.55);
+  --color-light-line: rgba(20, 20, 20, 0.12);
+  --color-light-card: #ffffff; /* cards on the light surface */
+  --color-card: #161616; /* cards on the dark surface */
+
+  /* ── Type ───────────────────────────────────────────────── */
+  --font-sans: "Helvetica Neue", Helvetica, Inter, system-ui, -apple-system, Arial, sans-serif;
+  --font-mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: clamp(1.125rem, 1rem + 0.6vw, 1.5rem);
+  --text-xl: clamp(1.5rem, 1.1rem + 1.6vw, 2.5rem);
+  --text-2xl: clamp(2rem, 1.2rem + 3.4vw, 4.5rem);
+  --text-3xl: clamp(3rem, 1.5rem + 4.6vw, 6.25rem);
+  --text-display: clamp(2.6rem, 1rem + 7vw, 8rem);
+
+  --leading-tight: 0.9;
+  --leading-snug: 1.15;
+  --leading-normal: 1.5;
+  --tracking-tight: -0.04em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.08em;
+
+  /* ── Spacing ────────────────────────────────────────────── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+  --space-10: 9rem;
+
+  --gutter: clamp(1.5rem, 8.4vw, 8rem); /* page edge → content column (1244px wide at 1496) */
+  --edge: var(--gutter); /* header and slider controls: same margin, so home lines up with project pages */
+  --inset: clamp(0rem, 8.4vw, 8rem); /* extra indent for text columns inside the container (0 on phones, below) */
+  --container: 120rem;
+
+  /* Padding presets (chosen per block in Sanity) */
+  --pad-none: 0;
+  --pad-sm: clamp(1.5rem, 3vw, 2.5rem);
+  --pad-md: clamp(2.5rem, 5vw, 4rem);
+  --pad-lg: clamp(3.5rem, 7vw, 6rem);
+
+  /* ── Radius ─────────────────────────────────────────────── */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+  --radius-pill: 100rem;
+
+  /* ── Motion ─────────────────────────────────────────────── */
+  --ease-out: cubic-bezier(0.625, 0.05, 0, 1); /* same curve as the slider */
+  --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+  --duration-fast: 200ms;
+  --duration-base: 450ms;
+  --duration-slow: 800ms;
+  --ease-page: cubic-bezier(0.32, 0.72, 0, 1); /* sheet in / out: quick start, long soft landing */
+  --duration-page: 680ms; /* project sheet sliding up */
+  --ease-page-back: cubic-bezier(0.76, 0, 0.24, 1); /* closing: a fuller in-out curve */
+  --duration-page-back: 720ms; /* project sheet sliding back down */
+  --sheet-shadow: drop-shadow(0 -4px 18px rgba(0, 0, 0, 0.12)); /* under a project page while it slides over the page beneath */
+  --duration-reveal: 900ms; /* lines and images entering */
+  --reveal-distance: 6rem;
+
+  /* ── Buttons ────────────────────────────────────────────── */
+  --button-height: 3rem;
+  --button-pad-x: 1.25rem;
+  --button-radius: var(--radius-pill);
+  --button-border: 1px solid var(--color-line);
+  --button-bg: transparent;
+  --button-fg: currentColor;
+  --button-hover-bg: var(--color-fg);
+  --button-hover-fg: var(--color-bg);
+
+  /* ── Icons (pixel icons from pixelarticons.com) ─────────── */
+  --icon-size: 2.125rem;
+  --icon-dim: 0.45; /* resting opacity; 1 on hover */
+
+  /* ── Header ─────────────────────────────────────────────── */
+  --header-height: 4.5rem;
+  --logo-width: 3.2rem;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --inset: 0rem;
+    --gutter: 1.25rem;
+    --pad-sm: 1.25rem;
+    --pad-md: 2rem;
+    --pad-lg: 2.5rem;
+    --header-height: 4rem;
+  }
+}

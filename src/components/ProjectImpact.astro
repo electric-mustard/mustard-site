@@ -1,0 +1,232 @@
+---
+// ProjectImpact — v2.3 — Made by Electric Mustard
+// Schema: src/sanity/schemaTypes/projectImpact.ts
+// A row of tall white result cards that swipes sideways, following the
+// Impact row on wearecollins.com. Built on GSAP Draggable + Inertia: drag
+// with a finger or mouse, flick and it glides, settles on a card; horizontal
+// trackpad scroll works too; vertical page scrolling is never hijacked.
+// No pinning and no entrance animation.
+import type { ProjectImpactData } from '../lib/types';
+import { blockClasses } from '../lib/block';
+import { t, type Lang } from '../lib/i18n';
+
+interface Props {
+  impact: ProjectImpactData;
+  /** Page language for the block's own labels. */
+  lang?: Lang;
+}
+
+const { impact, lang = 'en' } = Astro.props;
+const classes = blockClasses(impact, { padding: 'lg', background: 'light' });
+---
+
+<section class:list={['impact', classes]} data-impact>
+  <div class="container inset">
+    <h2 class="impact__head">{impact.heading || t(lang, 'impact')}</h2>
+  </div>
+  <div class="impact__viewport" data-impact-viewport>
+    <ol class="impact__track" data-impact-track>
+      {
+        impact.items.map((item) => (
+          <li class="impact__item" data-impact-item>
+            <span class="impact__value">{item.value}</span>
+            <span class="impact__text">
+              <span class="impact__label">{item.label}</span>
+              {item.note && <span class="impact__note">{item.note}</span>}
+            </span>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<style>
+  .impact {
+    overflow: clip;
+  }
+
+  .impact__head {
+    font-size: var(--text-xl);
+    font-weight: 400;
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-tight);
+    margin-bottom: var(--space-6);
+  }
+
+  /* The row runs edge to edge; the first card lines up with the heading. */
+  .impact__viewport {
+    width: 100%;
+    overflow: hidden;
+    cursor: grab;
+    touch-action: pan-y; /* the browser keeps vertical scrolling; we take horizontal */
+  }
+  .impact__viewport.is-dragging {
+    cursor: grabbing;
+  }
+
+  .impact__track {
+    list-style: none;
+    margin: 0;
+    padding: 0 var(--gutter) 0 calc(var(--gutter) + var(--inset));
+    display: flex;
+    gap: var(--space-5);
+    width: max-content;
+    will-change: transform;
+  }
+
+  /* Collins: 362 × ~470 cards, 24px apart, 40px padding */
+  .impact__item {
+    flex: 0 0 auto;
+    width: min(80vw, 22.5rem);
+    min-height: 23rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: var(--space-7);
+    padding: var(--space-6);
+    background: var(--block-card);
+    border-radius: var(--radius-lg);
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .impact__value {
+    font-size: var(--text-2xl);
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: var(--tracking-tight);
+  }
+
+  .impact__text {
+    display: grid;
+    gap: var(--space-3);
+    max-width: 26rem;
+  }
+
+  .impact__label {
+    font-size: var(--text-lg);
+    line-height: var(--leading-snug);
+  }
+
+  .impact__note {
+    font-size: var(--text-lg);
+    line-height: var(--leading-snug);
+    color: var(--block-fg-muted);
+  }
+
+  @media (min-width: 768px) {
+    .impact__item {
+      min-height: 27rem;
+    }
+  }
+</style>
+
+<script>
+  import gsap from 'gsap';
+  import { Draggable } from 'gsap/Draggable';
+  import { InertiaPlugin } from 'gsap/InertiaPlugin';
+  import { Observer } from 'gsap/Observer';
+
+  gsap.registerPlugin(Draggable, InertiaPlugin, Observer);
+
+  interface Swiper {
+    destroy: () => void;
+  }
+  let swipers: Swiper[] = [];
+
+  function createSwiper(viewport: HTMLElement): Swiper | null {
+    const track = viewport.querySelector<HTMLElement>('[data-impact-track]');
+    if (!track) return null;
+    const items = [...track.querySelectorAll<HTMLElement>('[data-impact-item]')];
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // How far the row can travel, and where each card sits.
+    let minX = 0;
+    let stops: number[] = [];
+    const measure = () => {
+      minX = Math.min(0, viewport.clientWidth - track.scrollWidth);
+      const padLeft = parseFloat(getComputedStyle(track).paddingLeft) || 0;
+      stops = items.map((el) => Math.max(minX, Math.min(0, -(el.offsetLeft - padLeft))));
+      drag.applyBounds({ minX, maxX: 0 });
+      gsap.set(track, { x: gsap.utils.clamp(minX, 0, Number(gsap.getProperty(track, 'x'))) });
+    };
+    const nearest = (x: number) => stops.reduce((best, s) => (Math.abs(s - x) < Math.abs(best - x) ? s : best), stops[0] ?? 0);
+
+    const [drag] = Draggable.create(track, {
+      type: 'x',
+      bounds: { minX: 0, maxX: 0 },
+      edgeResistance: 0.8,
+      inertia: !reduced,
+      allowNativeTouchScrolling: true, // vertical swipes still scroll the page
+      dragClickables: true,
+      snap: { x: nearest },
+      onPress: () => gsap.killTweensOf(track),
+      onDragStart: () => viewport.classList.add('is-dragging'),
+      onDragEnd: () => viewport.classList.remove('is-dragging'),
+      onRelease: () => viewport.classList.remove('is-dragging'),
+    });
+
+    // Horizontal trackpad / shift-wheel moves the row; a pause snaps it to a card.
+    let settle = 0;
+    const observer = Observer.create({
+      target: viewport,
+      type: 'wheel',
+      lockAxis: true,
+      onChangeX: (self) => {
+        if (Math.abs(self.deltaX) < Math.abs(self.deltaY)) return;
+        gsap.killTweensOf(track);
+        const x = gsap.utils.clamp(minX, 0, Number(gsap.getProperty(track, 'x')) - self.deltaX);
+        gsap.set(track, { x });
+        window.clearTimeout(settle);
+        settle = window.setTimeout(() => {
+          gsap.to(track, { x: nearest(x), duration: 0.5, ease: 'power3.out' });
+        }, 120);
+      },
+    });
+
+    // Keyboard: arrows step between cards while a card has focus
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      const x = Number(gsap.getProperty(track, 'x'));
+      const i = stops.indexOf(nearest(x));
+      const target = stops[Math.max(0, Math.min(stops.length - 1, i + (e.key === 'ArrowRight' ? 1 : -1)))];
+      gsap.to(track, { x: target, duration: 0.6, ease: 'power3.out' });
+      e.preventDefault();
+    };
+    viewport.tabIndex = 0;
+    viewport.addEventListener('keydown', onKey);
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(viewport);
+    if (document.fonts) document.fonts.ready.then(measure);
+
+    return {
+      destroy() {
+        ro.disconnect();
+        observer.kill();
+        drag.kill();
+        viewport.removeEventListener('keydown', onKey);
+        gsap.killTweensOf(track);
+        gsap.set(track, { clearProps: 'transform' });
+      },
+    };
+  }
+
+  function destroy() {
+    swipers.forEach((s) => s.destroy());
+    swipers = [];
+  }
+
+  function init() {
+    destroy();
+    document.querySelectorAll<HTMLElement>('[data-impact-viewport]').forEach((viewport) => {
+      const s = createSwiper(viewport);
+      if (s) swipers.push(s);
+    });
+  }
+
+  document.addEventListener('astro:page-load', init);
+  document.addEventListener('astro:before-swap', destroy);
+</script>

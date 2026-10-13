@@ -1,0 +1,144 @@
+---
+// ProjectHero — v1.7 — Made by Electric Mustard
+// Schema: src/sanity/schemaTypes/projectHero.ts
+// The title section (eyebrow and details left, title right — the Collins
+// proportions), then the one big image. Text enters line by line; the image
+// wipes up after it (data-reveal, see src/lib/reveal.ts).
+import type { ProjectHeroData } from '../lib/types';
+import { blockClasses } from '../lib/block';
+import { t, type Lang } from '../lib/i18n';
+
+interface Props {
+  title: string;
+  hero: ProjectHeroData;
+  /** Page language for the block's own labels. */
+  lang?: Lang;
+}
+
+const { title, hero, lang = 'en' } = Astro.props;
+const classes = blockClasses(hero, { padding: 'lg', background: 'light' });
+---
+
+<section class:list={['project-hero', classes]}>
+  <div class="project-hero__intro container inset" data-reveal-group>
+    <p class="eyebrow project-hero__eyebrow" data-reveal>{hero.eyebrow || t(lang, 'project')}</p>
+    <h1 class="project-hero__title" data-reveal>{title}</h1>
+    {
+      (hero.client || hero.year) && (
+        <dl class="project-hero__meta" data-reveal="block">
+            {hero.client && (
+              <div>
+                <dt class="eyebrow">{t(lang, 'client')}</dt>
+                <dd>{hero.client}</dd>
+              </div>
+            )}
+            {hero.year && (
+              <div>
+                <dt class="eyebrow">{t(lang, 'year')}</dt>
+                <dd>{hero.year}</dd>
+              </div>
+            )}
+        </dl>
+      )
+    }
+  </div>
+
+  <div class="container flush-phone">
+    <figure class="project-hero__figure flush-phone__item" data-reveal="image" data-reveal-delay="0.2">
+      <img
+        src={hero.image.src}
+        srcset={hero.image.srcset}
+        sizes="(min-width: 1496px) 1244px, 84vw"
+        width={hero.image.width}
+        height={hero.image.height}
+        alt={hero.image.alt}
+        loading="eager"
+        decoding="async"
+        class="project-hero__img"
+      />
+    </figure>
+  </div>
+</section>
+
+<style>
+  .project-hero {
+    padding-top: 0; /* the intro handles its own top space, under the fixed header */
+  }
+
+  /* Phones: eyebrow, title, then client / year. Desktop: eyebrow + meta left, title right. */
+  .project-hero__intro {
+    display: grid;
+    grid-template-areas:
+      'eyebrow'
+      'title'
+      'meta';
+    gap: var(--space-5);
+    padding-top: calc(var(--header-height) + var(--block-pad));
+    padding-bottom: var(--block-pad);
+  }
+  .project-hero__eyebrow {
+    grid-area: eyebrow;
+  }
+  .project-hero__title {
+    grid-area: title;
+  }
+  .project-hero__meta {
+    grid-area: meta;
+  }
+
+  .project-hero__meta {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+  }
+  .project-hero__meta div {
+    display: grid;
+    gap: var(--space-1);
+  }
+  .project-hero__meta dd {
+    margin: 0;
+    font-size: var(--text-sm);
+  }
+
+  .project-hero__title {
+    font-size: var(--text-2xl);
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: var(--tracking-tight);
+    text-wrap: balance;
+  }
+
+  .project-hero__figure {
+    margin: 0;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    max-height: 90svh;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+  }
+
+  .project-hero__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  @media (min-width: 768px) {
+    .project-hero__intro {
+      grid-template-columns: 1fr 1.9fr; /* Collins: 378 / 720 */
+      grid-template-areas:
+        'eyebrow title'
+        'meta title';
+      column-gap: var(--space-8);
+      row-gap: var(--space-5);
+      align-items: start;
+      align-content: start;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .project-hero__figure {
+      aspect-ratio: 4 / 5;
+    }
+  }
+</style>
